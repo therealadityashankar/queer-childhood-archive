@@ -1,0 +1,1 @@
+Meine Ex Freundin hat ihrer Mama erzählt das ich auch Jungs mag. Daraufhin wurde sie in ein christliches Jugendlager geschickt über die Ferienzeit und dazu gedrängt mit mir Schluss zu machen, da ich sie ja eh für einen Mann verlassen würde.
