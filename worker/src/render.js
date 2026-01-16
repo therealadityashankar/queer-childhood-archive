@@ -8,7 +8,12 @@ export function escapeHtml(str) {
 }
 
 export function renderFeedCard(item) {
-  const firstImage = item.images && item.images[0] ? item.images[0] : null;
+  let firstImage = null;
+  if (item.images && item.images[0]) {
+    const imageName = item.images[0];
+    const compressedName = `compressed-${imageName.replace(/\.(jpg|jpeg|png|gif|webp)$/i, '.jpg')}`;
+    firstImage = `__IMAGE_URL__/responses/${item.id}/${compressedName}`;
+  }
   const message = item.message || '';
   const text = message.length > 150 ? message.substring(0, message.lastIndexOf(' ', 150)) + '...' : message;
   const itemJson = JSON.stringify(item).replace(/'/g, '&apos;');

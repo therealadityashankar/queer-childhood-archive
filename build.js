@@ -1,8 +1,64 @@
 #!/usr/bin/env node
 const fs = require('fs');
 const path = require('path');
+const { execSync } = require('child_process');
+
+// Check if ImageMagick is installed
+function checkImageMagick() {
+  try {
+    execSync('convert -version', { stdio: 'ignore' });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+// Compress an image using ImageMagick
+function compressImage(inputPath, outputPath) {
+  try {
+    execSync(`convert "${inputPath}" -resize 500x700 "${outputPath}"`, {
+      stdio: 'pipe'
+    });
+    return true;
+  } catch (error) {
+    console.error(`Failed to compress ${inputPath}:`, error.message);
+    return false;
+  }
+}
+
+// Process and compress images in a directory
+function processImagesInDirectory(dirPath, files) {
+  const imageFiles = files
+    .filter(f => /^image\d+\.(jpg|jpeg|png|gif|webp)$/i.test(f))
+    .sort((a, b) => {
+      const numA = parseInt(a.match(/\d+/)[0], 10);
+      const numB = parseInt(b.match(/\d+/)[0], 10);
+      return numA - numB;
+    });
+
+  for (const imageFile of imageFiles) {
+    const inputPath = path.join(dirPath, imageFile);
+    const compressedFileName = `compressed-${imageFile.replace(/\.(jpg|jpeg|png|gif|webp)$/i, '.jpg')}`;
+    const outputPath = path.join(dirPath, compressedFileName);
+
+    // Only compress if the compressed version doesn't already exist
+    if (!fs.existsSync(outputPath)) {
+      compressImage(inputPath, outputPath);
+    }
+  }
+}
 
 async function build() {
+  // Check if ImageMagick is installed
+  if (!checkImageMagick()) {
+    console.error('Error: ImageMagick is not installed.');
+    console.error('Please install ImageMagick:');
+    console.error('  macOS: brew install imagemagick');
+    console.error('  Ubuntu/Debian: sudo apt-get install imagemagick');
+    console.error('  Windows: choco install imagemagick');
+    process.exit(1);
+  }
+
   // Dynamic import of ESM module
   const { escapeHtml, renderFeedCard, renderResponses, renderIndexHtml } = await import('./worker/src/render.js');
 
@@ -16,10 +72,16 @@ async function build() {
 
   const template = fs.readFileSync(templatePath, 'utf8');
   const responses = getLocalResponses();
-  const output = renderIndexHtml(template, responses);
+  let output = renderIndexHtml(template, responses);
+  
+  // Check for --cdn flag
+  const useCdn = process.argv.includes('--cdn');
+  const imageUrl = useCdn ? 'https://cdn.jsdelivr.net/gh/therealadityashankar/trans-project@main' : '';
+  output = output.replace(/__IMAGE_URL__/g, imageUrl);
+  
   fs.writeFileSync(outputPath, output, 'utf8');
 
-  console.log(`Built index.html with ${responses.length} responses`);
+  console.log(`Built index.html with ${responses.length} responses${useCdn ? ' (using CDN)' : ' (local)'}`);
 }
 
 function getLocalResponses() {
@@ -46,14 +108,17 @@ function getLocalResponses() {
     }
 
     const files = fs.readdirSync(dirPath);
+    
+    // Process and compress images
+    processImagesInDirectory(dirPath, files);
+
     const images = files
       .filter(f => /^image\d+\.(jpg|jpeg|png|gif|webp)$/i.test(f))
       .sort((a, b) => {
         const numA = parseInt(a.match(/\d+/)[0], 10);
         const numB = parseInt(b.match(/\d+/)[0], 10);
         return numA - numB;
-      })
-      .map(f => `https://cdn.jsdelivr.net/gh/therealadityashankar/trans-project@main/responses/${timestamp}/${f}`);
+      });
 
     responses.push({
       id: timestamp,

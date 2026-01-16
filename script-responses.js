@@ -1,5 +1,13 @@
 const params = new URLSearchParams(window.location.search);
 
+function getImageBaseUrl() {
+    console.log("this funciton was called ...")
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        return '';
+    }
+    return 'https://cdn.jsdelivr.net/gh/therealadityashankar/trans-project@main';
+}
+
 function getLang() {
     return params.get('lang') === 'en' ? 'en' : 'de';
 }
@@ -50,8 +58,10 @@ function showDetail(item) {
     const timestamp = item.id || '';
     const totalImages = (item.images || []).length;
     const imageText = getLang() === 'de' ? 'Bild' : 'Image';
+    const baseUrl = getImageBaseUrl();
     const images = (item.images || [])
-        .map((imagePath, index) => {
+        .map((imageName, index) => {
+            const imagePath = `${baseUrl}/responses/${timestamp}/${imageName}`;
             return `<div class="image-wrapper"><p class="image-counter">${imageText} ${index + 1}/${totalImages}</p><img class="detail-image" src="${imagePath}" alt=""></div>`;
         })
         .join('');
