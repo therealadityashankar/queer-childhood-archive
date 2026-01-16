@@ -167,8 +167,7 @@ ion-icon.sidebar-icon.hydrated {
 }
 
 .feed-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    border: 2px solid black;
 }
 
 .card-image {
